@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awesome JPG to PDF Converter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- jsPDF library CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Landscape background image */
+            background-image: url('https://placehold.co/1920x1080/667eea/ffffff/png?text=Beautiful+Landscape'); /* Placeholder image, replace with a real landscape URL */
+            background-size: cover; /* Cover the entire viewport */
+            background-position: center; /* Center the image */
+            background-attachment: fixed; /* Keep the background fixed while scrolling */
+        }
+        /* Custom styles for subtle animations and better visual appeal */
+        .card-glow {
+            transition: all 0.3s ease-in-out;
+        }
+        .card-glow:hover {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); /* Slightly stronger shadow on hover */
+            transform: translateY(-5px);
+        }
+        .button-gradient {
+            background-image: linear-gradient(to right, var(--tw-gradient-stops));
+        }
+        .button-gradient:hover {
+            background-position: right center; /* Move background on hover */
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            border-radius: 8px; /* rounded-lg */
+            font-size: 0.9rem;
+            color: #374151; /* text-gray-700 */
+        }
+        .file-item svg {
+            margin-right: 8px;
+            color: #6b7280; /* text-gray-500 */
+        }
+        /* Overlay for the main card to improve readability */
+        .card-overlay {
+            background-color: rgba(255, 255, 255, 0.92); /* Slightly transparent white */
+            backdrop-filter: blur(5px); /* Optional: adds a subtle blur effect behind the card */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+    <div class="card-overlay p-10 rounded-2xl shadow-3xl w-full max-w-lg text-center card-glow border border-gray-100">
+        <h1 class="text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+            🖼️ Image to PDF 📄
+        </h1>
+        <p class="text-lg text-gray-700 mb-8 leading-relaxed">
+            Effortlessly combine your JPG images into a single, beautiful PDF document.
+        </p>
+
+        <div class="mb-8">
+            <label for="jpgInput" class="block text-xl font-semibold text-white mb-4 cursor-pointer
+                                        bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700
+                                        py-4 px-8 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:scale-105 button-gradient">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-3 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6H16a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h1zm-2 6h14a2 2 0 002-2V8a2 2 0 00-2-2h-1.12a6 6 0 00-11.76 0H4a2 2 0 00-2 2v10a2 2 0 002 2zM12 10v6m-3-3h6" />
+                </svg>
+                Select JPG Files
+            </label>
+            <input type="file" id="jpgInput" accept="image/jpeg, image/jpg" multiple class="hidden" onchange="displaySelectedFiles()">
+            <div id="fileList" class="mt-6 text-left text-gray-800 bg-gray-50 p-4 rounded-lg border border-gray-200 min-h-[50px] flex flex-col justify-center">
+                <p class="text-gray-500 text-center text-sm">No files chosen yet.</p>
+            </div>
+        </div>
+
+        <button id="convertBtn" class="w-full text-white font-extrabold text-xl py-4 px-8 rounded-xl shadow-lg
+                                        bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700
+                                        transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-opacity-75 button-gradient" onclick="convertJpgToPdf()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 inline-block mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Convert to PDF
+        </button>
+
+        <div id="loadingIndicator" class="mt-8 hidden">
+            <div class="flex items-center justify-center">
+                <div class="animate-spin rounded-full h-10 w-10 border-t-4 border-b-4 border-indigo-500"></div>
+                <span class="ml-4 text-lg text-gray-700 font-medium">Converting your images...</span>
+            </div>
+        </div>
+
+        <div id="messageBox" class="mt-8 p-5 rounded-xl text-md hidden border shadow-sm"></div>
+
+        <a id="downloadLink" class="hidden mt-8 w-full inline-block text-white font-extrabold text-xl py-4 px-8 rounded-xl shadow-lg
+                                      bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700
+                                      transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-75 button-gradient" download="converted_images.pdf">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 inline-block mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m-3-3h6m-7-6h10a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2z" />
+            </svg>
+            Download PDF
+        </a>
+    </div>
+
+    <script>
+        const jpgInput = document.getElementById('jpgInput');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadLink = document.getElementById('downloadLink');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const messageBox = document.getElementById('messageBox');
+        const fileList = document.getElementById('fileList');
+
+        // Function to display selected file names
+        function displaySelectedFiles() {
+            fileList.innerHTML = ''; // Clear previous list
+            if (jpgInput.files.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = 'list-none p-0 m-0'; // Remove default list styling
+                for (let i = 0; i < jpgInput.files.length; i++) {
+                    const li = document.createElement('li');
+                    li.className = 'file-item'; // Apply custom file item styling
+                    li.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.414L14.586 5A2 2 0 0115 5.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h7V5.414L12.414 4H6z" clip-rule="evenodd" />
+                                    </svg>${jpgInput.files[i].name}`;
+                    ul.appendChild(li);
+                }
+                fileList.appendChild(ul);
+                convertBtn.disabled = false; // Enable convert button if files are selected
+                convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                fileList.innerHTML = '<p class="text-gray-500 text-center text-sm">No files chosen yet.</p>';
+                convertBtn.disabled = true; // Disable if no files
+                convertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            hideMessageBox(); // Clear any previous messages
+            downloadLink.classList.add('hidden'); // Hide download link
+        }
+
+        // Function to show a message in the message box
+        function showMessage(message, type = 'info') {
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'border-red-300', 'bg-green-100', 'text-green-700', 'border-green-300', 'bg-blue-100', 'text-blue-700', 'border-blue-300');
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-100', 'text-red-700', 'border-red-300');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-100', 'text-green-700', 'border-green-300');
+            } else {
+                messageBox.classList.add('bg-blue-100', 'text-blue-700', 'border-blue-300');
+            }
+            messageBox.classList.add('animate-fade-in'); // Add animation class
+        }
+
+        // Function to hide the message box
+        function hideMessageBox() {
+            messageBox.classList.add('hidden');
+            messageBox.classList.remove('animate-fade-in');
+        }
+
+        // Main conversion function
+        async function convertJpgToPdf() {
+            const files = jpgInput.files;
+            if (files.length === 0) {
+                showMessage('Please select at least one JPG file.', 'error');
+                return;
+            }
+
+            loadingIndicator.classList.remove('hidden');
+            convertBtn.disabled = true;
+            convertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            downloadLink.classList.add('hidden');
+            hideMessageBox();
+
+            try {
+                // Initialize jsPDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (!file.type.startsWith('image/jpeg') && !file.type.startsWith('image/jpg')) {
+                        showMessage(`File "${file.name}" is not a JPG image. Please select only JPG files.`, 'error');
+                        loadingIndicator.classList.add('hidden');
+                        convertBtn.disabled = false;
+                        convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        return;
+                    }
+
+                    // Read image file as Data URL
+                    const reader = new FileReader();
+                    const imageData = await new Promise((resolve, reject) => {
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = error => reject(error);
+                        reader.readAsDataURL(file);
+                    });
+
+                    // Create an image object to get dimensions
+                    const img = new Image();
+                    img.src = imageData;
+                    await new Promise(resolve => { img.onload = resolve; });
+
+                    const imgWidth = img.width;
+                    const imgHeight = img.height;
+
+                    // Calculate dimensions to fit PDF page
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const pageHeight = doc.internal.pageSize.getHeight();
+
+                    const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
+                    const scaledWidth = imgWidth * ratio;
+                    const scaledHeight = imgHeight * ratio;
+
+                    const x = (pageWidth - scaledWidth) / 2;
+                    const y = (pageHeight - scaledHeight) / 2;
+
+                    // Add a new page for each image, except for the first one
+                    if (i > 0) {
+                        doc.addPage();
+                    }
+
+                    // Add image to PDF
+                    doc.addImage(imageData, 'JPEG', x, y, scaledWidth, scaledHeight);
+                }
+
+                // Generate PDF and create download link
+                const pdfBlob = doc.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                downloadLink.href = pdfUrl;
+                downloadLink.classList.remove('hidden');
+                downloadLink.textContent = `Download PDF (${files.length} image${files.length > 1 ? 's' : ''})`;
+                showMessage('Conversion successful! Your PDF is ready to download. 🎉', 'success');
+
+            } catch (error) {
+                console.error('Error converting JPG to PDF:', error);
+                showMessage('Oops! Something went wrong during conversion. Please try again.', 'error');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                convertBtn.disabled = false;
+                convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // Disable button on initial load if no files are selected
+        window.onload = () => {
+            convertBtn.disabled = true;
+            convertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        };
+    </script>
+</body>
+</html>
